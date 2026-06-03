@@ -8,9 +8,7 @@ from HillClimbing import HillClimbing
 from dataProduk import df as dataShopee
 from skorSAW import hitung_saw
 
-
 jumlahPengujian = 10
-
 def ambilNamaToko(hasil):
     if isinstance(hasil, pd.Series):
         return hasil["Toko"]
@@ -26,7 +24,6 @@ def ukurAlgoritma(namaAlgoritma, fungsiAlgoritma, df, skorOptimal):
     totalWaktu = 0
     tokoTerbaik = None
     skorTerbaik = -1
-
     for i in range(jumlahPengujian):
         startTime = time.perf_counter()
         hasil = fungsiAlgoritma(df)
@@ -40,9 +37,7 @@ def ukurAlgoritma(namaAlgoritma, fungsiAlgoritma, df, skorOptimal):
         if skorTerpilih > skorTerbaik:
             skorTerbaik = skorTerpilih
             tokoTerbaik = tokoTerpilih
-
     akurasi = (skorTerbaik/skorOptimal) * 100 if skorOptimal > 0 else 0
-
     return {
         "Nama Algoritma": namaAlgoritma,
         "Rata-rata Waktu Eksekusi (ms)": totalWaktu/jumlahPengujian,
@@ -58,12 +53,10 @@ def cetakTabelRekapitulasi(hasilRekap):
         f"{'Akurasi (%)':>14}"
     )
     garis = "-" * len(header)
-
-    print("TABEL REKAPITULASI HASIL PENGUJIAN")
+    print("TABEL HASIL PENGUJIAN")
     print(garis)
     print(header)
     print(garis)
-
     for hasil in hasilRekap:
         print(
             f"{hasil['Nama Algoritma']:<20}"
@@ -71,16 +64,13 @@ def cetakTabelRekapitulasi(hasilRekap):
             f"{hasil['Toko yang Dipilih']:<30}"
             f"{hasil['Akurasi (%)']:>14.2f}"
         )
-
     print(garis)
 
 def main():
     random.seed(42)
-
     df = hitung_saw(dataShopee.copy())
     tokoOptimal = BranchandBound(df)
     skorOptimal = ambilSkorToko(df, tokoOptimal)
-
     algoritma = [
         ("Greedy", Greedy),
         ("Branch and Bound", BranchandBound),

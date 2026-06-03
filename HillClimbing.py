@@ -3,7 +3,6 @@ import random
 def HillClimbOnce(df, start):
     currentIndex = start
     currentRow = df.iloc[currentIndex]
-
     while True:
         bestNeighbor = currentRow
         bestIndex = currentIndex
@@ -25,7 +24,6 @@ def HillClimbOnce(df, start):
 def HillClimbing(df, max_restart = 10):
     bestOverall = None
     bestScore = -1
-
     for i in range(max_restart):
         start = random.randint(0, len(df)-1)
         hasil = HillClimbOnce(df, start)
