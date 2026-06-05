@@ -1,54 +1,63 @@
 import heapq
 
-def BranchandBound(df):
-    pq = []
-    maxSkor = df["skorSAW"].max()
-    root = {
+def algoritmaBranchAndBound(df):
+    # Cari toko terbaik dengan Branch and Bound
+    antrianPrioritas = []
+    batasSkorAwal = df["skorSAW"].max()
+    
+    akar = {
         "level": 0,
         "skor": 0,
         "toko": None,
-        "bound": maxSkor
+        "bound": batasSkorAwal
     }
-
-    heapq.heappush(pq, (-root["bound"], root))
-    bestSkor = 0
-    bestToko = None
-    while len(pq) > 0:
-        now = heapq.heappop(pq)[1]
-        if now["bound"] <= bestSkor:
+    
+    heapq.heappush(antrianPrioritas, (-akar["bound"], akar))
+    
+    skorTerbaik = -1
+    tokoTerbaik = None
+    
+    while len(antrianPrioritas) > 0:
+        boundNegatif, nodeSekarang = heapq.heappop(antrianPrioritas)
+        boundSekarang = -boundNegatif
+        
+        if boundSekarang <= skorTerbaik:
             continue
-        if now["level"] >= len(df):
+            
+        if nodeSekarang["level"] >= len(df):
             continue
-
-        row = df.iloc[now["level"]]
-        pilihSkor = row["skorSAW"]
-        if pilihSkor > bestSkor:
-            bestSkor = pilihSkor
-            bestToko = row["Toko"]
-
-        childPilih = {
-            "level": now["level"] + 1,
-            "skor": pilihSkor,
-            "toko": row["Toko"],
-            "bound": pilihSkor
+            
+        toko = df.iloc[nodeSekarang["level"]]
+        skorPilih = toko["skorSAW"]
+        
+        if skorPilih > skorTerbaik:
+            skorTerbaik = skorPilih
+            tokoTerbaik = toko["Toko"]
+            
+        cabangPilih = {
+            "level": nodeSekarang["level"] + 1,
+            "skor": skorPilih,
+            "toko": toko["Toko"],
+            "bound": skorPilih
         }
-
-        sisa = df.iloc[now["level"] + 1:]
-        if len(sisa) > 0:
-            boundTidak = sisa["skorSAW"].max()
+        
+        sisaData = df.iloc[nodeSekarang["level"] + 1:]
+        if len(sisaData) > 0:
+            boundTidak = sisaData["skorSAW"].max()
         else:
             boundTidak = 0
-
-        childTidak = {
-            "level": now["level"] + 1,
-            "skor": now["skor"],
-            "toko": now["toko"],
+            
+        cabangTidak = {
+            "level": nodeSekarang["level"] + 1,
+            "skor": nodeSekarang["skor"],
+            "toko": nodeSekarang["toko"],
             "bound": boundTidak
         }
+        
+        if cabangPilih["bound"] > skorTerbaik:
+            heapq.heappush(antrianPrioritas, (-cabangPilih["bound"], cabangPilih))
+             
+        if cabangTidak["bound"] > skorTerbaik:
+            heapq.heappush(antrianPrioritas, (-cabangTidak["bound"], cabangTidak))
 
-        if childPilih["bound"] > bestSkor:
-            heapq.heappush(pq, (-childPilih["bound"], childPilih))
-        if childTidak["bound"] > bestSkor:
-            heapq.heappush(pq, (-childTidak["bound"], childTidak))
-
-    return bestToko
+    return df[df["Toko"] == tokoTerbaik].iloc[0]

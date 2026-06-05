@@ -1,82 +1,81 @@
-from dataProduk import df as dataShopee
-from skorSAW import hitung_saw
-
+from dataProduk import getDataAsli
+from skorSAW import hitungSaw
 
 def formatRupiah(nilai):
-    return f"Rp{int(nilai):,}".replace(",", ".")
+    return f"Rp{int(nilai):,}".replace(",", "."))
 
-def cetakTabelSAW(df):
+def cetakTabelSaw(df):
     header = (
-        f"{'Kode':<6}"
-        f"{'Toko':<22}"
-        f"{'Harga':>12}  "
+        f"{'Code':<6}"
+        f"{'Shop':<22}"
+        f"{'Price':>12}  "
         f"{'Rating':>8}  "
-        f"{'Norm Harga':>12}  "
+        f"{'Norm Price':>12}  "
         f"{'Norm Rating':>12}  "
-        f"{'Skor SAW':>10}"
+        f"{'Score':>10}"
     )
     garis = "-" * len(header)
 
-    print("TABEL HASIL NORMALISASI DAN PERHITUNGAN SKOR SAW")
+    print("\nNormalization & SAW Scores")
     print(garis)
     print(header)
     print(garis)
 
-    for i, row in df.iterrows():
+    for _, toko in df.iterrows():
         print(
-            f"{row['Kode']:<6}"
-            f"{row['Toko']:<22}"
-            f"{formatRupiah(row['Harga']):>12}  "
-            f"{row['Rating']:>8.1f}  "
-            f"{row['normalisasiHarga']:>12.6f}  "
-            f"{row['normalisasiRating']:>12.6f}  "
-            f"{row['skorSAW']:>10.6f}"
+            f"{toko['Kode']:<6}"
+            f"{toko['Toko']:<22}"
+            f"{formatRupiah(toko['Harga']):>12}  "
+            f"{toko['Rating']:>8.1f}  "
+            f"{toko['normHarga']:>12.6f}  "
+            f"{toko['normRating']:>12.6f}  "
+            f"{toko['skorSAW']:>10.6f}"
         )
 
     print(garis)
 
-def cetakRankingSAW(df):
+def cetakRankingSaw(df):
     dfRanking = df.sort_values(by="skorSAW", ascending=False).reset_index(drop=True)
 
     header = (
-        f"{'Rank':<6}"
-        f"{'Kode':<6}"
-        f"{'Toko':<22}"
-        f"{'Harga':>12}  "
+        f"{'#':<6}"
+        f"{'Code':<6}"
+        f"{'Shop':<22}"
+        f"{'Price':>12}  "
         f"{'Rating':>8}  "
-        f"{'Skor SAW':>10}"
+        f"{'Score':>10}"
     )
     garis = "-" * len(header)
 
-    print("\nTABEL RANKING TOKO BERDASARKAN SKOR SAW")
+    print("\nRanking by Score")
     print(garis)
     print(header)
     print(garis)
 
-    for i, row in dfRanking.iterrows():
+    for urutan, toko in dfRanking.iterrows():
         print(
-            f"{i + 1:<6}"
-            f"{row['Kode']:<6}"
-            f"{row['Toko']:<22}"
-            f"{formatRupiah(row['Harga']):>12}  "
-            f"{row['Rating']:>8.1f}  "
-            f"{row['skorSAW']:>10.6f}"
+            f"{urutan + 1:<6}"
+            f"{toko['Kode']:<6}"
+            f"{toko['Toko']:<22}"
+            f"{formatRupiah(toko['Harga']):>12}  "
+            f"{toko['Rating']:>8.1f}  "
+            f"{toko['skorSAW']:>10.6f}"
         )
 
     print(garis)
 
 def main():
-    dfSaw = hitung_saw(dataShopee.copy())
+    dfAsli = getDataAsli()
+    dfSaw = hitungSaw(dfAsli)
 
-    print("Bobot kriteria:")
-    print("- Harga  : 0.5 (cost)")
-    print("- Rating : 0.5 (benefit)\n")
+    print("\nCriteria Weights:")
+    print("  Price : 50% (lower = better)")
+    print("  Rating: 50% (higher = better)")
+    print(f"\n  Min Price: {formatRupiah(dfSaw['Harga'].min())}")
+    print(f"  Max Rating: {dfSaw['Rating'].max():.1f}")
 
-    print(f"Nilai minimum Harga  : {formatRupiah(dfSaw['Harga'].min())}")
-    print(f"Nilai maksimum Rating: {dfSaw['Rating'].max():.1f}\n")
-
-    cetakTabelSAW(dfSaw)
-    cetakRankingSAW(dfSaw)
+    cetakTabelSaw(dfSaw)
+    cetakRankingSaw(dfSaw)
 
 if __name__ == "__main__":
     main()

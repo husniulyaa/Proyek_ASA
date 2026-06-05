@@ -1,34 +1,49 @@
 import random
 
-def HillClimbOnce(df, start):
-    currentIndex = start
-    currentRow = df.iloc[currentIndex]
+def hillClimbOnce(df, indeksAwal, jumlahTetangga=100):
+    # Proses HC sekali dari titik awal
+    indeksSekarang = indeksAwal
+    skorSekarang = df.iloc[indeksSekarang]["skorSAW"]
+    
+    daftarIndeks = list(range(len(df)))
+    
     while True:
-        bestNeighbor = currentRow
-        bestIndex = currentIndex
-        for i in range(len(df)):
-            if i == currentIndex:
+        adaPerbaikan = False
+        skorTetanggaTerbaik = skorSekarang
+        indeksTetanggaTerbaik = indeksSekarang
+        
+        calonTetangga = random.sample(daftarIndeks, min(jumlahTetangga, len(daftarIndeks)))
+        
+        for indeks in calonTetangga:
+            if indeks == indeksSekarang:
                 continue
-            neighbor = df.iloc[i]
-            if neighbor["skorSAW"] > bestNeighbor["skorSAW"]:
-                bestNeighbor = neighbor
-                bestIndex = i
-        if bestNeighbor["skorSAW"] > currentRow["skorSAW"]:
-            currentRow = bestNeighbor
-            currentIndex = bestIndex
+                
+            skorTetangga = df.iloc[indeks]["skorSAW"]
+            
+            if skorTetangga > skorTetanggaTerbaik:
+                skorTetanggaTerbaik = skorTetangga
+                indeksTetanggaTerbaik = indeks
+                adaPerbaikan = True
+        
+        if adaPerbaikan:
+            indeksSekarang = indeksTetanggaTerbaik
+            skorSekarang = skorTetanggaTerbaik
         else:
             break
+            
+    return df.iloc[indeksSekarang]
 
-    return currentRow
-
-def HillClimbing(df, max_restart = 10):
-    bestOverall = None
-    bestScore = -1
-    for i in range(max_restart):
-        start = random.randint(0, len(df)-1)
-        hasil = HillClimbOnce(df, start)
-        if hasil["skorSAW"] > bestScore:
-            bestScore = hasil["skorSAW"]
-            bestOverall = hasil
-
-    return bestOverall["Toko"]
+def algoritmaHillClimbing(df, maxRestart=10):
+    # Cari toko terbaik dengan HC & random restart
+    tokoTerbaik = None
+    skorTerbaik = -1
+    
+    for _ in range(maxRestart):
+        indeksAwal = random.randint(0, len(df) - 1)
+        hasilLokal = hillClimbOnce(df, indeksAwal)
+        
+        if hasilLokal["skorSAW"] > skorTerbaik:
+            skorTerbaik = hasilLokal["skorSAW"]
+            tokoTerbaik = hasilLokal
+            
+    return tokoTerbaik

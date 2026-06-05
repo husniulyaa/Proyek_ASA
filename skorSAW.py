@@ -1,14 +1,14 @@
-def hitung_saw(df):
-    bobot={
-        "Harga": 0.5,
-        "Rating": 0.5
-    }
-
-    minHarga = df["Harga"].min()
-    maxRating = df["Rating"].max()
-    df["normalisasiHarga"] = minHarga/df["Harga"]
-    df["normalisasiRating"] = df["Rating"]/maxRating
+def hitungSaw(df):
+    # Hitung skor SAW
+    dfHasil = df.copy()
     
-    df["skorSAW"] = (df["normalisasiHarga"]*bobot["Harga"] + df["normalisasiRating"]*bobot["Rating"])
-
-    return df
+    hargaMinimum = dfHasil["Harga"].min()
+    ratingMaksimum = dfHasil["Rating"].max()
+    
+    dfHasil["normHarga"] = hargaMinimum / dfHasil["Harga"]
+    dfHasil["normRating"] = dfHasil["Rating"] / ratingMaksimum
+    
+    dfHasil["skorSAW"] = (dfHasil["normHarga"] * 0.5) + \
+                         (dfHasil["normRating"] * 0.5)
+                         
+    return dfHasil
