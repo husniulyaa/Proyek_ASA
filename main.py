@@ -1,13 +1,14 @@
 import random
 import time
 import pandas as pd
+import os
 from dataProduk import getDataAsli, augmentData
 from skorSAW import hitungSaw
 from Greedy import algoritmaGreedy
 from BranchnBound import algoritmaBranchAndBound
 from HillClimbing import algoritmaHillClimbing
 
-#konfigurasi global
+# KONFIGURASI GLOBAL
 RANDOM_SEED = 42
 JUMLAH_DATA_TARGET = 1000
 JUMLAH_PENGUJIAN = 30
@@ -25,21 +26,21 @@ def ukurPerformaAlgoritma(namaAlgoritma, fungsiAlgoritma, df, skorOptimal):
         
         waktuMs = (waktuSelesai - waktuMulai) * 1000
         daftarWaktu.append(waktuMs)
-        
         if isinstance(hasil, pd.Series):
             skorHasil = hasil["skorSAW"]
             namaToko = hasil["Toko"]
-        else:
+        else: 
             continue
             
         if skorHasil > skorTerbaik:
             skorTerbaik = skorHasil
             tokoTerbaik = namaToko
 
-    rataRataWaktu = sum(daftarWaktu)/len(daftarWaktu)
-    akurasi = (skorTerbaik/skorOptimal) * 100
+    rataRataWaktu = sum(daftarWaktu) / len(daftarWaktu)
+    
+    # Perhitungan Akurasi
     if skorOptimal > 0:
-        akurasi = (skorTerbaik/skorOptimal) * 100
+        akurasi = (skorTerbaik / skorOptimal) * 100
     else:
         akurasi = 0
 
@@ -52,45 +53,65 @@ def ukurPerformaAlgoritma(namaAlgoritma, fungsiAlgoritma, df, skorOptimal):
     }
 
 def simpanExcelLengkap(dfAugmented, dfFinal, hasilRekap, namaFile="Dataset_Lengkap_Proyek_ASA.xlsx"):
-    with pd.ExcelWriter(namaFile, engine="openpyxl") as writer:
-        dfMentah = dfAugmented[["Kode Toko", "Toko", "Harga", "Rating"]]
-        dfMentah.to_excel(writer, sheet_name="Data Hasil Augmentasi", index=False)
-        
-        dfSaw = dfFinal[["Kode Toko", "Toko", "Harga", "Rating", "normHarga", "normRating", "skorSAW"]]
-        dfSaw = dfSaw.sort_values(by="skorSAW", ascending=False)
-        dfSaw.to_excel(writer, sheet_name="Skor SAW", index=False)
-        
-        dfIterasi = pd.DataFrame({
-            "Iterasi ke-": range(1, JUMLAH_PENGUJIAN + 1),
-            "Waktu Greedy (ms)": hasilRekap[0]["Daftar Waktu"],
-            "Waktu Branch and Bound (ms)": hasilRekap[1]["Daftar Waktu"],
-            "Waktu Hill Climbing (ms)": hasilRekap[2]["Daftar Waktu"]
-        })
-        dfIterasi.to_excel(writer, sheet_name="Data 30 Iterasi", index=False)
+    if os.path.exists(namaFile):
+        try:
+            os.remove(namaFile)
+        except PermissionError:
+            print(f"[WARNING] Tutup file '{namaFile}' di Excel sebelum menjalankan script!")
+            return
 
-    print("File tersimpan.")
+    try:
+        with pd.ExcelWriter(namaFile, engine='openpyxl') as writer:
+            # Sheet 1 - Data Hasil Augmentasi
+            dfMentah = dfAugmented[['Kode', 'Toko', 'Harga', 'Rating']]
+            dfMentah.to_excel(writer, sheet_name='Data_Hasil_Augmentasi', index=False)
+            
+            # Sheet 2 - Skor SAW
+            dfSaw = dfFinal[['Kode', 'Toko', 'Harga', 'Rating', 'normHarga', 'normRating', 'skorSAW']]
+            dfSaw = dfSaw.sort_values(by='skorSAW', ascending=False)
+            dfSaw.to_excel(writer, sheet_name='Skor_SAW', index=False)
+            
+            # Sheet 3 - Data 30 Iterasi Performa
+            dfIterasi = pd.DataFrame({
+                "Iterasi_Ke": range(1, JUMLAH_PENGUJIAN + 1),
+                "Waktu_Greedy_ms": hasilRekap[0]["Daftar Waktu"],
+                "Waktu_BnB_ms": hasilRekap[1]["Daftar Waktu"],
+                "Waktu_HC_ms": hasilRekap[2]["Daftar Waktu"]
+            })
+            dfIterasi.to_excel(writer, sheet_name='Data_30_Iterasi', index=False)
+                    
+    except Exception as e:
+        print(f"[ERROR] Gagal menyimpan Excel: {e}")
 
 def main():
     random.seed(RANDOM_SEED)
-    print("\n" + "="*50)
-    print("Analisis Algoritma")
-    print("="*50)
     
+    print("\n" + "="*60)
+    print("PROYEK MAKALAH ANALISIS STRATEGI ALGORITMA")
+    print("="*60)
+    
+    # Persiapan Data
     dfAsli = getDataAsli()
     dfAugmented = augmentData(dfAsli, JUMLAH_DATA_TARGET)
-    print(f"Original: {len(dfAsli)} | Augmented: {len(dfAugmented)}")
-
-    dfFinal = hitungSaw(dfAugmented)    
-    top5Toko = dfFinal.sort_values(by="skorSAW", ascending=False).head(5)
-    print("Top 5:")
-    for urutan, (_, toko) in enumerate(top5Toko.iterrows(), start=1):
-        print(f"      {urutan}. {toko['Toko']}: {toko['skorSAW']:.4f}")
-        
-    hasilReferensi = algoritmaBranchAndBound(dfFinal)
-    skorOptimal = hasilReferensi["skorSAW"]
-    tokoOptimal = hasilReferensi["Toko"]
-    print(f"    Best: {tokoOptimal} ({skorOptimal:.4f})")
+    print(f"      Data asli: {len(dfAsli)} toko.")
+    print(f"      Data augmentasi: {len(dfAugmented)} toko.")
     
+    # Hitung SAW
+    dfFinal = hitungSaw(dfAugmented)
+    
+    # Top 5
+    top5 = dfFinal.sort_values(by="skorSAW", ascending=False).head(5)
+    print("      Top 5 Toko Terbaik:")
+    for i, (_, row) in enumerate(top5.iterrows(), start=1):
+        print(f"      {i}. {row['Toko']} (Skor: {row['skorSAW']:.4f})")
+        
+    refResult = algoritmaBranchAndBound(dfFinal)
+    skorOptimal = refResult["skorSAW"]
+    tokoOptimal = refResult["Toko"]
+    print(f"      Solusi Optimal: {tokoOptimal}")
+    print(f"      Skor Optimal: {skorOptimal:.6f}")
+    
+    print(f"      Jumlah pengujian: {JUMLAH_PENGUJIAN} kali per algoritma")    
     daftarAlgoritma = [
         ("Greedy", algoritmaGreedy),
         ("Branch and Bound", algoritmaBranchAndBound),
@@ -99,31 +120,26 @@ def main():
     
     hasilRekap = []
     for nama, fungsi in daftarAlgoritma:
+        print(f"      Sedang menguji {nama} ...")
         hasil = ukurPerformaAlgoritma(nama, fungsi, dfFinal, skorOptimal)
         hasilRekap.append(hasil)
-        
-    print("\n" + "="*50)
-    print("Results")
-    print("="*50)
-    
-    header = f"{'Algorithm':<20} {'Best Shop':<25} {'Avg (ms)':>12} {'Accuracy':>10}"
+
+    print("\n" + "="*60)
+    print("HASIL AKHIR")
+    print("="*60)
+    header = f"{'Algoritma':<20} {'Toko Terpilih':<25} {'Rata-rata (ms)':>15} {'Akurasi':>10}"
     print(header)
     print("-" * len(header))
-    
-    for hasil in hasilRekap:
+    for h in hasilRekap:
         print(
-            f"{hasil['Algoritma']:<20} "
-            f"{hasil['Toko Terpilih']:<25} "
-            f"{hasil['Waktu Rata-rata (ms)']:>12.2f} "
-            f"{hasil['Akurasi (%)']:>10.1f}%"
+            f"{h['Algoritma']:<20} "
+            f"{h['Toko Terpilih']:<25} "
+            f"{h['Waktu Rata-rata (ms)']:>15.4f} "
+            f"{h['Akurasi (%)']:>9.2f}%"
         )
         
-    print("="*50)
-    try:
-        simpanExcelLengkap(dfAugmented, dfFinal, hasilRekap)
-    except Exception as error:
-        print(f"Gagal menyimpan file: {error}")
+    print("="*60)
+    simpanExcelLengkap(dfAugmented, dfFinal, hasilRekap)
 
-# Main Program
-main()
-
+if __name__ == "__main__":
+    main()
